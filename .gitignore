@@ -1,0 +1,54 @@
+# Logs
+logs
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+lerna-debug.log*
+
+# Dependencies
+node_modules
+**/node_modules
+
+# Build outputs
+dist
+dist-ssr
+*-dist
+build
+
+# Environment files
+.env
+.env.local
+.env.production
+*.local
+*/.env
+
+# Audio files (generated)
+**/audio/*.wav
+**/audio/*.mp3
+
+# Editor directories and files
+.vscode/*
+!.vscode/extensions.json
+.idea
+.DS_Store
+*.suo
+*.ntvs*
+*.njsproj
+*.sln
+*.sw?
+
+# Spark specific
+**/agent-eval-report*
+packages
+pids
+.file-manifest
+.devcontainer/
+.spark-workbench-id
+.spark-initial-sha
+
+# Temporary files
+*.tmp
+*.temp
+ziNmeHDl
