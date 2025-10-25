@@ -96,12 +96,14 @@ app.post('/api/calls/initiate', async (req, res) => {
   try {
     console.log('📞 Incoming call request:', req.body)
 
-    const { transactionId, customerPhone, customerName, amount, merchantName } = req.body
+    const { transactionId, customerPhone, customerName, amount, merchantName, currency, merchant } = req.body
+    const transactionCurrency = currency || 'USD'
+    const resolvedMerchant = merchantName || merchant
 
     if (!transactionId || !customerPhone || !customerName) {
       return res.status(400).json({ 
         error: 'Missing required fields',
-        required: ['transactionId', 'customerPhone', 'customerName', 'amount', 'merchantName']
+        required: ['transactionId', 'customerPhone', 'customerName', 'amount', 'merchantName', 'currency']
       })
     }
 
@@ -111,7 +113,9 @@ app.post('/api/calls/initiate', async (req, res) => {
       customerPhone,
       customerName,
       amount,
-      merchantName,
+      merchantName: resolvedMerchant,
+      merchant: resolvedMerchant,
+      currency: transactionCurrency,
       status: 'initiating',
       callStartedAt: new Date().toISOString(),
       auditLog: [{
@@ -126,7 +130,8 @@ app.post('/api/calls/initiate', async (req, res) => {
       customerPhone,
       customerName,
       amount,
-      merchantName
+      merchantName: resolvedMerchant,
+      currency: transactionCurrency
     })
 
     // Update transaction with call connection ID and audio URL

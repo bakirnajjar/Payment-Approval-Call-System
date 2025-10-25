@@ -9,9 +9,60 @@ export class CallService {
   private callbacks: Map<string, CallUpdateCallback> = new Map()
   private pollingIntervals: Map<string, ReturnType<typeof setInterval>> = new Map()
   private finalStates = new Set<Transaction['status']>(['approved', 'rejected', 'escalated', 'timeout', 'no-answer', 'failed'])
+  private currentTransactions: Map<string, Transaction> = new Map()
+
+  private mergeTransactionData(existing: Transaction | undefined, incoming: Partial<Transaction>): Transaction {
+    if (!existing) {
+      const guaranteed = incoming as Transaction
+      return {
+        ...guaranteed,
+        merchant: guaranteed.merchant || guaranteed.merchantName || '',
+        currency: guaranteed.currency || 'USD',
+        retryCount: guaranteed.retryCount ?? 0,
+        auditLog: guaranteed.auditLog ?? [],
+        dtmfInput: guaranteed.dtmfInput ?? null
+      }
+    }
+
+    const mergedAuditLog = incoming.auditLog && incoming.auditLog.length > 0
+      ? incoming.auditLog
+      : existing.auditLog
+
+    return {
+      ...existing,
+      ...incoming,
+  amount: incoming.amount ?? existing.amount,
+  currency: incoming.currency || existing.currency,
+  merchant: incoming.merchant || incoming.merchantName || existing.merchant,
+  merchantName: incoming.merchantName || existing.merchantName,
+  customerName: incoming.customerName || existing.customerName,
+  customerPhone: incoming.customerPhone || existing.customerPhone,
+  dtmfInput: incoming.dtmfInput !== undefined ? incoming.dtmfInput : existing.dtmfInput,
+  callStartedAt: incoming.callStartedAt ?? existing.callStartedAt,
+  callEndedAt: incoming.callEndedAt ?? existing.callEndedAt,
+  retryCount: incoming.retryCount ?? existing.retryCount,
+  audioUrl: incoming.audioUrl || existing.audioUrl,
+  callConnectionId: incoming.callConnectionId || existing.callConnectionId,
+  error: incoming.error || existing.error,
+      auditLog: mergedAuditLog
+    }
+  }
+
+  private pushUpdate(transaction: Transaction): void {
+    this.currentTransactions.set(transaction.id, transaction)
+    const callback = this.callbacks.get(transaction.id)
+    if (callback) {
+      callback(transaction)
+    }
+  }
   
   subscribe(transactionId: string, callback: CallUpdateCallback): () => void {
     this.callbacks.set(transactionId, callback)
+
+    const existing = this.currentTransactions.get(transactionId)
+    if (existing) {
+      callback(existing)
+    }
 
     if (!this.pollingIntervals.has(transactionId)) {
       this.startStatusPolling(transactionId)
@@ -37,8 +88,11 @@ export class CallService {
   async initiateCall(transaction: Transaction): Promise<void> {
     try {
       // Update initial status
+      this.currentTransactions.set(transaction.id, transaction)
+
       let current = addAuditLogEntry(transaction, 'initiating', 'Sending request to backend API')
-      this.notify(current)
+      current = this.mergeTransactionData(this.currentTransactions.get(transaction.id), current)
+      this.pushUpdate(current)
 
       // Call backend API to initiate real phone call
       const response = await fetch(`${BACKEND_URL}/api/calls/initiate`, {
@@ -51,7 +105,9 @@ export class CallService {
           customerPhone: transaction.customerPhone,
           customerName: transaction.customerName,
           amount: transaction.amount,
-          merchantName: transaction.merchant
+          merchantName: transaction.merchant,
+          merchant: transaction.merchant,
+          currency: transaction.currency
         })
       })
 
@@ -77,7 +133,8 @@ export class CallService {
         { callConnectionId: result.callConnectionId }
       )
       current.callStartedAt = new Date().toISOString()
-      this.notify(current)
+      current = this.mergeTransactionData(this.currentTransactions.get(transaction.id), current)
+      this.pushUpdate(current)
 
       // Start polling for call status updates
       this.startStatusPolling(transaction.id)
@@ -90,7 +147,8 @@ export class CallService {
         `Failed to initiate call: ${error instanceof Error ? error.message : 'Unknown error'}`
       )
       failed.callEndedAt = new Date().toISOString()
-      this.notify(failed)
+      const mergedFailed = this.mergeTransactionData(this.currentTransactions.get(transaction.id), failed)
+      this.pushUpdate(mergedFailed)
     }
   }
 
@@ -109,10 +167,13 @@ export class CallService {
           
           // Check if we have a complete transaction state from backend
           if (statusData.transaction) {
-            this.notify(statusData.transaction)
+            const existing = this.currentTransactions.get(transactionId)
+            const backendTransaction = statusData.transaction as Partial<Transaction>
+            const merged = this.mergeTransactionData(existing, backendTransaction)
+            this.pushUpdate(merged)
             
             // Stop polling if call is in final state
-            if (this.finalStates.has(statusData.transaction.status)) {
+            if (this.finalStates.has(merged.status)) {
               clearInterval(interval)
               this.pollingIntervals.delete(transactionId)
             }
@@ -139,8 +200,8 @@ export class CallService {
       'pending',
       `Retry attempt ${updatedTransaction.retryCount} initiated`
     )
-    
-    this.notify(withAudit)
+    const merged = this.mergeTransactionData(this.currentTransactions.get(transaction.id), withAudit)
+    this.pushUpdate(merged)
     
     await this.initiateCall(withAudit)
   }

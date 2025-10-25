@@ -52,7 +52,7 @@ class CallService {
   /**
    * Initiate an outbound call to a customer
    */
-  async initiateCall({ transactionId, customerPhone, customerName, amount, merchantName }) {
+  async initiateCall({ transactionId, customerPhone, customerName, amount, merchantName, currency = 'USD' }) {
     try {
       console.log(`📞 Initiating call to ${customerPhone} for transaction ${transactionId}`)
 
@@ -72,7 +72,7 @@ class CallService {
       }
 
       // Generate verification message
-      const message = this.generateVerificationMessage(customerName, amount, merchantName)
+  const message = this.generateVerificationMessage({ customerName, amount, merchantName, currency })
       console.log(`💬 Generated message: "${message}"`)
 
       // Generate TTS audio
@@ -119,6 +119,7 @@ class CallService {
         customerName,
         amount,
         merchantName,
+        currency,
         audioUrl,
         status: 'initiated',
         callConnectionId,
@@ -133,7 +134,8 @@ class CallService {
         callConnectionId,
         transactionId,
         audioUrl,
-        status: 'initiated'
+        status: 'initiated',
+        currency
       }
 
     } catch (error) {
@@ -216,16 +218,17 @@ class CallService {
   /**
    * Generate verification message
    */
-  generateVerificationMessage(customerName, amount, merchantName) {
+  generateVerificationMessage({ customerName, amount, merchantName, currency = 'USD' }) {
+    const resolvedMerchant = merchantName || 'the merchant'
     const formattedAmount = new Intl.NumberFormat('en-US', {
       style: 'currency',
-      currency: 'USD'
+      currency
     }).format(amount)
 
     return `
       Hello ${customerName}. 
       This is an automated call from your bank's fraud prevention system.
-      We detected a transaction of ${formattedAmount} at ${merchantName}.
+      We detected a transaction of ${formattedAmount} at ${resolvedMerchant}.
       If you authorized this transaction, press 1.
       If you did not authorize this transaction, press 2.
       If this call is not for you, press 0.

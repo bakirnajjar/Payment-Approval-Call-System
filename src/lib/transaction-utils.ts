@@ -4,11 +4,20 @@ export function generateTransactionId(): string {
   return `TXN-${Date.now()}-${Math.random().toString(36).substring(2, 9).toUpperCase()}`
 }
 
-export function generateCallScript(transaction: Omit<Transaction, 'id' | 'status' | 'createdAt' | 'updatedAt' | 'retryCount' | 'auditLog' | 'dtmfInput'>): CallScript {
-  const text = `Hello, this is a transaction verification call from your bank. We need your confirmation to proceed with an online transaction of ${transaction.currency} ${transaction.amount.toFixed(2)} from ${transaction.merchant}. Please press 1 to approve or 2 to decline. To report this as suspicious activity, press 0.`
+export function generateCallScript(transaction: Transaction): CallScript {
+  const merchantName = transaction.merchant || transaction.merchantName || 'the merchant'
+
+  const formatter = new Intl.NumberFormat('en-US', {
+    style: 'currency',
+    currency: transaction.currency || 'USD'
+  })
+
+  const formattedAmount = formatter.format(transaction.amount || 0)
+
+  const text = `Hello ${transaction.customerName || 'customer'}. This is a transaction verification call from your bank. We detected a transaction of ${formattedAmount} at ${merchantName}. If you authorized this transaction, press 1. If you did not authorize this transaction, press 2. If this call is not for you, press 0.`
   
   return {
-    transactionId: '',
+    transactionId: transaction.id,
     text
   }
 }

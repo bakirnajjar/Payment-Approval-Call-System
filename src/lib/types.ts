@@ -20,6 +20,7 @@ export interface Transaction {
   amount: number
   currency: string
   merchant: string
+  merchantName?: string
   customerName: string
   customerPhone: string
   status: TransactionStatus
