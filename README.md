@@ -27,15 +27,14 @@ Banks need to verify high-value or suspicious transactions when customers don't 
 ## Technology Stack
 
 - **Frontend**: React 19 + TypeScript
-- **UI Components**: shadcn/ui v4 (Radix UI primitives)
-- **Styling**: Tailwind CSS v4
+- **Backend**: Node.js 22+ (Express)
 - **State Management**: React hooks + Spark KV storage (persistent)
 - **Icons**: Phosphor Icons
 - **Notifications**: Sonner
 
 ## Demo Architecture
 
-```
+```text
 ┌─────────────────────────────────────────────────────────────┐
 │                      Transaction Form                        │
 │            (User enters payment details)                     │
@@ -94,6 +93,7 @@ az communication phonenumber purchase \
 Create a backend service that:
 
 **Endpoints:**
+
 - `POST /api/transactions/initiate` - Receives transaction details, creates call
 - `POST /api/webhooks/acs` - Receives ACS events (CallConnected, RecognizeCompleted, etc.)
 
@@ -169,7 +169,7 @@ def on_recognize_completed(event):
 
 #### 4. **Event Flow (Production)**
 
-```
+```text
 Your Backend              ACS                    Customer
      │                     │                         │
      ├─ CreateCall ───────>│                         │
@@ -246,7 +246,7 @@ CREATE TABLE audit_log (
 
 ### Retry & Fallback Strategy
 
-```
+```text
 Attempt 1: Phone Call (ACS)
     ↓ (if timeout/no-answer)
 Attempt 2: Phone Call (retry after 5 min)
@@ -264,84 +264,84 @@ Escalate to human agent call
 
 ```bash
 npm install
-npm run dev
+npm run start:backend    # terminal 1
+npm run dev              # terminal 2
 ```
 
 ### Project Structure
 
-```
+```text
 spark-template/
-├── docs/                        # Documentation
-│   ├── PRD.md                   # Product Requirements
-│   ├── INTEGRATION_DIAGRAM.md   # Architecture docs
-│   └── SECURITY.md              # Security guidelines
-├── scripts/                     # Utility scripts
-│   └── start-all.sh             # Start both frontend & backend
-├── backend/                     # Node.js API server
-│   ├── server.js                # Express server
-│   ├── services/                # Business logic
-│   │   ├── call-service.js      # ACS call management
-│   │   ├── tts-service.js       # Azure TTS integration
-│   │   ├── webhook-handler.js   # ACS event processing
-│   │   └── storage-service.js   # Data persistence
-│   └── audio/                   # Generated TTS files
-├── src/                         # React frontend
-│   ├── components/              # UI components
-│   │   ├── TransactionForm.tsx  # Create new transaction
-│   │   ├── TransactionDetail.tsx # Display transaction card
-│   │   ├── TransactionStats.tsx # Dashboard statistics
-│   │   └── AuditLogDialog.tsx   # Full audit trail viewer
-│   ├── lib/                     # Utilities & services
-│   │   ├── types.ts             # TypeScript interfaces
-│   │   ├── transaction-utils.ts # Helper functions
-│   │   └── call-service.ts      # Call simulation service
-│   ├── hooks/                   # Custom React hooks
-│   └── styles/                  # CSS & themes
-└── package.json                 # Frontend dependencies
+├── backend/                      # Node.js API server (workspace)
+│   ├── package.json              # Backend manifest
+│   ├── server.js                 # Express server
+│   ├── services/                 # Business logic & ACS orchestration
+│   └── audio/                    # Generated TTS files
+├── frontend/                     # React + Vite app (workspace)
+│   ├── package.json              # Frontend manifest
+│   ├── src/                      # Application source
+│   │   ├── components/           # UI components
+│   │   ├── hooks/                # Custom React hooks
+│   │   ├── lib/                  # Client utilities & services
+│   │   └── styles/               # CSS & themes
+│   ├── index.html                # Vite entry
+│   ├── tailwind.config.js        # Tailwind configuration
+│   ├── tsconfig.json             # TypeScript config
+│   └── vite.config.ts            # Vite config
+├── docs/                         # Documentation bundle
+├── scripts/                      # Utility scripts
+│   └── start-all.sh              # Start both frontend & backend
+├── node_modules/                 # Installed workspace dependencies (generated)
+├── package.json                  # Root workspace manifest
+└── package-lock.json             # Generated via npm install (workspace lock file)
 ```
 
 ## Quick Start
 
 ### Prerequisites
-- Node.js 22+ 
+
+- Node.js 22+
 - Azure Communication Services resource with phone number
 - Azure Cognitive Services (Speech) resource
 
 ### Setup
-1. **Clone and install dependencies:**
-   ```bash
-   npm install
-   cd backend && npm install
-   ```
 
-2. **Configure environment variables:**
-   Copy `.env.example` to `.env.local` and add your Azure credentials:
-   ```env
-   VITE_ACS_ENDPOINT=https://your-acs.communication.azure.com/
-   VITE_ACS_ACCESS_KEY=your_access_key
-   VITE_AZURE_TTS_KEY=your_tts_key
-   VITE_AZURE_TTS_REGION=your_region
-   ```
+1. **Clone and install dependencies:**
+
+    ```bash
+    npm install
+    ```
+
+2. **Configure environment variables:** Copy `.env.example` to `.env.local` and add your Azure credentials.
+
+    ```env
+    VITE_ACS_ENDPOINT=https://your-acs.communication.azure.com/
+    VITE_ACS_ACCESS_KEY=your_access_key
+    VITE_AZURE_TTS_KEY=your_tts_key
+    VITE_AZURE_TTS_REGION=your_region
+    ```
 
 3. **Start the application:**
-   ```bash
-   # Use the convenient startup script
-   chmod +x scripts/start-all.sh
-   ./scripts/start-all.sh
-   
-   # Or start services manually:
-   # Backend (in one terminal)
-   cd backend && npm start
-   
-   # Frontend (in another terminal)
-   npm run dev
-   ```
+
+    ```bash
+    # Use the convenient startup script
+    chmod +x scripts/start-all.sh
+    ./scripts/start-all.sh
+
+    # Or start services manually:
+    # Backend (in one terminal)
+    npm run start:backend
+
+    # Frontend (in another terminal)
+    npm run dev
+    ```
 
 4. **Test the system:**
-   - Open http://localhost:5001
-   - Fill in transaction details
-   - Enter a real phone number for testing
-   - Click "Initiate Verification Call"
+
+    - Open <http://localhost:5001>
+    - Fill in transaction details
+    - Enter a real phone number for testing
+    - Click "Initiate Verification Call"
 
 ## References
 

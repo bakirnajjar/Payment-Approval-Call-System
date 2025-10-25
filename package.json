@@ -1,0 +1,22 @@
+{
+  "name": "call-approval-platform",
+  "private": true,
+  "version": "0.1.0",
+  "description": "Monorepo managing the fraud call approval frontend and backend",
+  "workspaces": [
+    "frontend",
+    "backend"
+  ],
+  "engines": {
+    "node": ">=22.0.0"
+  },
+  "scripts": {
+    "install:all": "npm install --workspaces",
+    "dev": "npm run dev --workspace frontend",
+    "dev:frontend": "npm run dev --workspace frontend",
+    "dev:backend": "npm run dev --workspace backend",
+    "build": "npm run build --workspace frontend",
+    "lint": "npm run lint --workspace frontend",
+    "start:backend": "npm start --workspace backend"
+  }
+}

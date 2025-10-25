@@ -33,16 +33,9 @@ fi
 
 echo "📦 Checking dependencies..."
 
-# Check if backend node_modules exists
-if [ ! -d "backend/node_modules" ]; then
-    echo "   Installing backend dependencies..."
-    cd backend && npm install && cd ..
-fi
-
-# Check if frontend node_modules exists
 if [ ! -d "node_modules" ]; then
-    echo "   Installing frontend dependencies..."
-    npm install
+    echo "   Installing workspace dependencies..."
+    npm install --workspaces
 fi
 
 echo "✅ Dependencies ready"
@@ -53,17 +46,15 @@ echo ""
 
 # Start backend in background
 echo "📞 Starting backend server (http://localhost:3000)..."
-cd backend
-npm start &
+npm start --workspace backend &
 BACKEND_PID=$!
-cd ..
 
 # Wait for backend to start
 sleep 3
 
 # Start frontend
 echo "🌐 Starting frontend (http://localhost:5001)..."
-npm run dev &
+npm run dev --workspace frontend &
 FRONTEND_PID=$!
 
 echo ""

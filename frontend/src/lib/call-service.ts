@@ -1,4 +1,4 @@
-import type { Transaction, DTMFInput } from './types'
+import type { Transaction } from './types'
 import { addAuditLogEntry } from './transaction-utils'
 
 const BACKEND_URL = import.meta.env.VITE_BACKEND_URL || 'http://localhost:3001'
