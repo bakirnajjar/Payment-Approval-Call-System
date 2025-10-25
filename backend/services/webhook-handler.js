@@ -51,11 +51,122 @@ class WebhookHandler {
     }
   }
 
+  extractToneValue(tone) {
+    if (tone === undefined || tone === null) {
+      return undefined
+    }
+
+    if (typeof tone === 'string') {
+      return tone
+    }
+
+    if (typeof tone === 'object') {
+      if ('tone' in tone && tone.tone !== undefined) {
+        return String(tone.tone)
+      }
+
+      if ('dtmfTone' in tone && tone.dtmfTone !== undefined) {
+        return String(tone.dtmfTone)
+      }
+    }
+
+    return String(tone)
+  }
+
+  describeToneForPrompt(rawTone) {
+    const rawValue = this.extractToneValue(rawTone)
+
+    if (!rawValue) {
+      return 'that option'
+    }
+
+    const normalized = this.normalizeTone(rawTone)
+    if (normalized) {
+      switch (normalized) {
+        case '0':
+        case '1':
+        case '2':
+          return `the ${normalized} key`
+        case '*':
+          return 'the star key'
+        case '#':
+          return 'the pound key'
+        default:
+          return `the ${normalized} key`
+      }
+    }
+
+    const lowerRaw = rawValue.toLowerCase()
+
+    const spelledDigitMap = {
+      zero: '0', one: '1', two: '2', three: '3', four: '4', five: '5', six: '6', seven: '7', eight: '8', nine: '9'
+    }
+
+    if (spelledDigitMap[lowerRaw]) {
+      return `the ${spelledDigitMap[lowerRaw]} key`
+    }
+
+    const toneDigitMatch = lowerRaw.match(/tone(\d)/)
+    if (toneDigitMatch) {
+      return `the ${toneDigitMatch[1]} key`
+    }
+
+    const digitMatch = lowerRaw.match(/(\d)/)
+    if (digitMatch) {
+      return `the ${digitMatch[1]} key`
+    }
+
+    return `your input ${rawValue}`
+  }
+
+  shouldTreatAsNoInput(resultInformation) {
+    if (!resultInformation) {
+      return false
+    }
+
+    const subCodeValue = resultInformation.subCode ?? resultInformation.code
+    const subCode = typeof subCodeValue === 'string' ? Number(subCodeValue) : subCodeValue
+    const message = typeof resultInformation.message === 'string'
+      ? resultInformation.message.toLowerCase()
+      : ''
+
+    return subCode === 8512 || message.includes('initial silence') || message.includes('no input')
+  }
+
+  async safePlayPrompt(callConnectionId, playSource, operationContext) {
+    const callConnection = callService.getCallConnection(callConnectionId)
+    const callMedia = callConnection.getCallMedia()
+
+    if (typeof callMedia.cancelAllMediaOperations === 'function') {
+      try {
+        await callMedia.cancelAllMediaOperations()
+      } catch (cancelError) {
+        if (this.isCallNotFoundError(cancelError)) {
+          throw cancelError
+        }
+        console.warn('⚠️  Unable to cancel existing media operations:', cancelError.message)
+      }
+    }
+
+    await callMedia.playToAll([playSource], {
+      operationContext
+    })
+  }
+
   isCallNotFoundError(error) {
     if (!error) return false
     const code = error.code || error.statusCode
+    if (typeof code === 'string') {
+      const normalizedCode = code.toLowerCase()
+      if (['8522', 'callnotfound', 'callnotactive', 'callnotconnected'].includes(normalizedCode)) {
+        return true
+      }
+    }
+    if (code === 8522) {
+      return true
+    }
     const message = typeof error.message === 'string' ? error.message.toLowerCase() : ''
-    return code === '8522' || code === 404 || message.includes('call not found')
+    return code === '8522' || code === 404 || message.includes('call not found') || message.includes('call is not active') || message.includes('call is not connected')
   }
 
   /**
@@ -190,9 +301,7 @@ class WebhookHandler {
 
       console.log('🔊 Play source:', JSON.stringify(playSource, null, 2))
 
-      await callConnection.getCallMedia().playToAll([playSource], {
-        operationContext: 'verification_message'
-      })
+      await this.safePlayPrompt(callConnectionId, playSource, 'verification_message')
 
       callService.updateCallStatus(callConnectionId, 'playing_message')
 
@@ -284,8 +393,8 @@ class WebhookHandler {
         {
           kind: 'callMediaRecognizeDtmfOptions',
           maxTonesToCollect: 1,
-          interToneTimeoutInSeconds: 5,
-          initialSilenceTimeoutInSeconds: 15,
+          interToneTimeoutInSeconds: 8,
+          initialSilenceTimeoutInSeconds: 30,
           interruptPrompt: false,
           operationContext: `dtmf_menu_${transactionId}_${attempt}`
         }
@@ -355,20 +464,27 @@ class WebhookHandler {
       const dtmfResult = event.data.dtmfResult
       const tones = dtmfResult?.tones || []
       const rawTone = tones[0]
+      const rawToneLabel = this.extractToneValue(rawTone)
       const normalizedTone = this.normalizeTone(rawTone)
 
-      console.log('🔍 Raw DTMF payload:', JSON.stringify({ rawTone, normalizedTone }))
+      console.log('🔍 Raw DTMF payload:', JSON.stringify({ rawTone: rawToneLabel, normalizedTone }))
 
-      if (!normalizedTone) {
+      if (rawTone === undefined || rawTone === null) {
         console.log('⚠️  No DTMF tones detected')
         await this.handleNoInput(callConnectionId, transactionId, updateTransaction)
+        return
+      }
+
+      if (!normalizedTone) {
+        console.log('⚠️  Unsupported DTMF input received')
+        await this.handleInvalidInput(callConnectionId, transactionId, updateTransaction, rawToneLabel)
         return
       }
 
       console.log(`✅ DTMF input received: ${normalizedTone}`)
 
       if (!['0', '1', '2'].includes(normalizedTone)) {
-        await this.handleInvalidInput(callConnectionId, transactionId, updateTransaction)
+        await this.handleInvalidInput(callConnectionId, transactionId, updateTransaction, rawToneLabel)
         return
       }
 
@@ -408,7 +524,7 @@ class WebhookHandler {
     }
   }
 
-  async handleInvalidInput(callConnectionId, transactionId, updateTransaction) {
+  async handleInvalidInput(callConnectionId, transactionId, updateTransaction, rawTone) {
     const attempts = this.recognitionAttempts.get(callConnectionId) ?? 1
 
     if (attempts >= MAX_DTMF_ATTEMPTS) {
@@ -422,23 +538,33 @@ class WebhookHandler {
     }
 
     try {
-      const retryMessage = 'The option you selected is not valid. Press 1 to approve the transaction, press 2 to decline it, or press 0 if this was not you.'
+      if (rawTone) {
+        console.log(`⚠️  Invalid DTMF selection received: ${rawTone}`)
+      }
+
+      const friendlyTone = this.describeToneForPrompt(rawTone)
+      const retryMessage = rawTone
+        ? `You pressed ${friendlyTone}, which is not a valid option. Press 1 to approve the transaction, press 2 to decline it, or press 0 if this was not you.`
+        : 'The option you selected is not valid. Press 1 to approve the transaction, press 2 to decline it, or press 0 if this was not you.'
       const audioBuffer = await ttsService.synthesizeToAudio(retryMessage)
       const audioUrl = await storageService.saveAudioFile(audioBuffer, `invalid_${transactionId}_${attempts}`)
 
-      const callConnection = callService.getCallConnection(callConnectionId)
-      await callConnection.getCallMedia().playToAll([
+      callService.updateCallStatus(callConnectionId, 'invalid_input', {
+        lastInput: rawTone
+      })
+
+      await this.safePlayPrompt(
+        callConnectionId,
         {
           kind: 'fileSource',
           url: audioUrl
-        }
-      ], {
-        operationContext: `invalid_prompt_${attempts}`
-      })
+        },
+        `invalid_prompt_${attempts}`
+      )
 
       updateTransaction?.(transactionId, {
         status: 'waiting-input',
-        message: `Invalid input received - re-prompting (${attempts}/${MAX_DTMF_ATTEMPTS})`
+        message: `Invalid input received - re-prompting (${attempts}/${MAX_DTMF_ATTEMPTS}). Please press 1, 2, or 0.`
       })
     } catch (error) {
       if (this.isCallNotFoundError(error)) {
@@ -468,14 +594,44 @@ class WebhookHandler {
    */
   async handleRecognizeFailed(event, transactionId, updateTransaction) {
     const callConnectionId = event.data.callConnectionId
-    console.error('❌ Recognition failed:', event.data)
-    
-    updateTransaction?.(transactionId, {
-      status: 'failed',
-      message: 'DTMF recognition failed'
+    const resultInformation = event.data.resultInformation || {}
+
+    console.warn('⚠️  Recognition failed:', {
+      transactionId,
+      callConnectionId,
+      resultInformation
     })
 
-    await this.handleNoInput(callConnectionId, transactionId, updateTransaction)
+    if (this.isCallNotFoundError(resultInformation)) {
+      console.warn('⚠️  Call already ended before recognition failure was processed')
+      this.recognitionAttempts.delete(callConnectionId)
+      return
+    }
+
+    if (this.shouldTreatAsNoInput(resultInformation)) {
+      await this.handleNoInput(callConnectionId, transactionId, updateTransaction)
+      return
+    }
+
+    const message = typeof resultInformation.message === 'string'
+      ? resultInformation.message
+      : 'DTMF recognition failed'
+
+    updateTransaction?.(transactionId, {
+      status: 'failed',
+      message,
+      error: JSON.stringify(resultInformation)
+    })
+
+    this.recognitionAttempts.delete(callConnectionId)
+
+    try {
+      await callService.hangupCall(callConnectionId)
+    } catch (hangupError) {
+      if (!this.isCallNotFoundError(hangupError)) {
+        console.error('❌ Failed to hang up after recognition failure:', hangupError)
+      }
+    }
   }
 
   /**
@@ -494,16 +650,12 @@ class WebhookHandler {
       const audioBuffer = await ttsService.synthesizeToAudio(timeoutMessage)
       const audioUrl = await storageService.saveAudioFile(audioBuffer, `timeout_${transactionId}`)
 
-      const callConnection = callService.getCallConnection(callConnectionId)
-      
       const playSource = {
         kind: 'fileSource',
         url: audioUrl
       }
 
-      await callConnection.getCallMedia().playToAll([playSource], {
-        operationContext: 'timeout_message'
-      })
+      await this.safePlayPrompt(callConnectionId, playSource, 'timeout_message')
 
       if (updateTransaction) {
         updateTransaction(transactionId, {
@@ -554,16 +706,12 @@ class WebhookHandler {
       const audioBuffer = await ttsService.synthesizeToAudio(confirmationMessage)
       const audioUrl = await storageService.saveAudioFile(audioBuffer, `confirm_${transactionId}_${dtmfInput}`)
 
-      const callConnection = callService.getCallConnection(callConnectionId)
-      
       const playSource = {
         kind: 'fileSource',
         url: audioUrl
       }
 
-      await callConnection.getCallMedia().playToAll([playSource], {
-        operationContext: 'confirmation_message'
-      })
+      await this.safePlayPrompt(callConnectionId, playSource, 'confirmation_message')
 
       callService.updateCallStatus(callConnectionId, 'confirmed')
 
