@@ -1,4 +1,4 @@
-# Azure Communication Services Backend
+                         # Azure Communication Services Backend
 
 This backend server handles **real** Azure Communication Services phone calls with Text-to-Speech integration.
 
@@ -39,20 +39,34 @@ npm install
 
 ### 2. Configure Environment
 
-Edit `.env` file with your Azure credentials:
+Copy `.env.example` to `.env` and fill in your Azure credentials:
+
+```bash
+cp .env.example .env
+```
+
+Then edit `.env`:
 
 ```env
-# Your actual ACS credentials (already configured)
-ACS_CONNECTION_STRING=endpoint=https://banajacs.uae.communication.azure.com/;accesskey=YOUR_KEY
-ACS_PHONE_NUMBER=+14255551234  # ⚠️ UPDATE THIS with your ACS phone number
+# Azure Communication Services credentials
+ACS_CONNECTION_STRING=endpoint=https://<your-resource>.communication.azure.com/;accesskey=<your-key>
+ACS_PHONE_NUMBER=+10000000000
 
-# Your Azure TTS credentials (already configured)
-AZURE_TTS_KEY=D7a28cAhwJa17SVrI3IkgmF6yrxt0kYTtIB7okMHPlOX6MRft0gcJQQJ99BIAC5RqLJXJ3w3AAAYACOGvGsm
-AZURE_TTS_REGION=westeurope
+# Azure Cognitive Services Speech (Text-to-Speech)
+AZURE_TTS_KEY=<your-speech-key>
+AZURE_TTS_REGION=<your-region>
+# Optional managed identity endpoint
+# AZURE_TTS_ENDPOINT=https://<your-custom-endpoint>.cognitiveservices.azure.com/
 
-# Your public callback URL
-CALLBACK_BASE_URL=https://your-domain.com  # ⚠️ REQUIRED for production
+# Publicly reachable base URL that ACS webhooks can call
+CALLBACK_BASE_URL=https://your-domain.com
+
+# Optional storage configuration for TTS audio files
+# AZURE_STORAGE_CONNECTION_STRING=DefaultEndpointsProtocol=...
+# AZURE_STORAGE_ACCOUNT_NAME=<your-storage-account>
 ```
+
+> ⚠️ **Keep secrets out of source control.** Never commit `.env` or any files containing live keys. The provided example uses placeholders only.
 
 ### 3. Get Your ACS Phone Number
 
@@ -100,9 +114,11 @@ npm start
 ## 📡 API Endpoints
 
 ### POST /api/calls/initiate
-Initiate an outbound call
+
+Initiate an outbound call.
 
 **Request:**
+
 ```json
 {
   "transactionId": "abc-123",
@@ -114,6 +130,7 @@ Initiate an outbound call
 ```
 
 **Response:**
+
 ```json
 {
   "success": true,
@@ -124,23 +141,28 @@ Initiate an outbound call
 ```
 
 ### POST /api/callbacks/:transactionId
-Webhook endpoint for ACS events (called by Azure)
+
+Webhook endpoint for ACS events (called by Azure).
 
 ### GET /api/calls/:callConnectionId/status
-Get current call status
+
+Get current call status.
 
 ### POST /api/calls/:callConnectionId/hangup
-Manually hang up a call
+
+Manually hang up a call.
 
 ### GET /health
-Health check endpoint
+
+Health check endpoint.
 
 ### GET /audio/:filename
-Serve generated TTS audio files
+
+Serve generated TTS audio files.
 
 ## 🔄 Call Flow
 
-```
+```text
 1. Frontend → POST /api/calls/initiate
 2. Backend → Generate TTS audio
 3. Backend → Call ACS createCall()
@@ -182,7 +204,7 @@ The backend generates natural-sounding voice messages using Azure Neural TTS:
 
 ## 🗂️ File Structure
 
-```
+```text
 backend/
 ├── server.js                      # Express server
 ├── .env                           # Environment configuration
@@ -202,6 +224,7 @@ backend/
 **Problem:** ACS events not reaching your server
 
 **Solutions:**
+
 1. Ensure `CALLBACK_BASE_URL` is publicly accessible
 2. Use ngrok for local development: `ngrok http 3000`
 3. Check firewall settings
@@ -212,6 +235,7 @@ backend/
 **Problem:** Calls fail to initiate
 
 **Solutions:**
+
 1. Verify `ACS_PHONE_NUMBER` is correct and provisioned
 2. Check phone number format (E.164: `+14155551234`)
 3. Ensure target number can receive calls
@@ -222,6 +246,7 @@ backend/
 **Problem:** Customer doesn't hear message
 
 **Solutions:**
+
 1. Check audio files in `backend/audio/` directory
 2. Verify `CALLBACK_BASE_URL` is accessible from ACS
 3. Test audio URL directly in browser
@@ -232,6 +257,7 @@ backend/
 **Problem:** Customer input not detected
 
 **Solutions:**
+
 1. Increase `initialSilenceTimeoutInSeconds` in webhook-handler.js
 2. Verify customer is pressing keys during recognition phase
 3. Check ACS logs for RecognizeCompleted events

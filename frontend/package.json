@@ -44,13 +44,14 @@
         "react-dom": "^19.0.0",
         "react-error-boundary": "^6.0.0",
         "react-hook-form": "^7.54.2",
-    "recharts": "^2.13.0",
+        "recharts": "^2.13.0",
         "sonner": "^2.0.1",
         "tailwind-merge": "^3.0.2",
         "uuid": "^11.1.0",
         "zod": "^3.25.76"
     },
     "devDependencies": {
+        "@azure/static-web-apps-cli": "^2.0.7",
         "@eslint/js": "^9.21.0",
         "@tailwindcss/postcss": "^4.1.8",
         "@types/react": "^19.0.10",
@@ -58,6 +59,7 @@
         "@vitejs/plugin-react": "^4.3.4",
         "@vitejs/plugin-react-swc": "^3.10.1",
         "eslint": "^9.28.0",
+        "eslint-plugin-react": "^7.37.5",
         "eslint-plugin-react-hooks": "^5.2.0",
         "eslint-plugin-react-refresh": "^0.4.19",
         "globals": "^16.0.0",

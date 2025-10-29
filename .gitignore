@@ -16,6 +16,7 @@ dist
 dist-ssr
 *-dist
 build
+*.zip
 
 # Environment files
 .env
