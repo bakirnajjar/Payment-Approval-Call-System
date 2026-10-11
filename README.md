@@ -27,7 +27,7 @@ Banks need to verify high-value or suspicious transactions when customers don't 
 ## Technology Stack
 
 - **Frontend**: React 19 + TypeScript
-- **Backend**: Node.js 22+ (Express)
+- **Backend**: Node.js 24 LTS (Express)
 - **State Management**: React hooks + Spark KV storage (persistent)
 - **Icons**: Phosphor Icons
 - **Notifications**: Sonner
@@ -262,6 +262,8 @@ Escalate to human agent call
 
 ### Run Locally
 
+Use Node.js 24.x for both workspaces (`.nvmrc`; e.g. `nvm use`) before installing dependencies.
+
 ```bash
 npm install
 npm run start:backend    # terminal 1
@@ -300,11 +302,13 @@ spark-template/
 
 ### Prerequisites
 
-- Node.js 22+
+- Node.js 24.x (LTS) and its bundled npm 11; select it with `.nvmrc` before `npm ci` or `npm install`. The root workspace and standalone `backend/` each have a separate npm lockfile.
 - Azure Communication Services resource with phone number
 - Azure Cognitive Services (Speech) resource
 
 ### Setup
+
+**Deployment prerequisite:** Configure the actual build and backend hosting environment to run Node.js 24.x and npm 11 before installing either lockfile or starting the server. This repository has no tracked CI workflow, container image, or deployment runtime setting to enforce that version remotely; verify the deployed runtime separately.
 
 1. **Clone and install dependencies:**
 
