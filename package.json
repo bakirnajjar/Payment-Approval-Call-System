@@ -22,7 +22,7 @@
   },
   "optionalDependencies": {
     "@esbuild/linux-x64": "0.25.11",
-    "@rollup/rollup-linux-x64-gnu": "4.52.5",
+    "@rollup/rollup-linux-x64-gnu": "4.64.12",
     "@swc/core-linux-x64-gnu": "1.13.21",
     "@tailwindcss/oxide-linux-x64-gnu": "4.1.16",
     "lightningcss-linux-x64-gnu": "1.30.2"
