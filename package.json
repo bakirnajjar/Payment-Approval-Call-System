@@ -16,7 +16,15 @@
     "dev:frontend": "npm run dev --workspace frontend",
     "dev:backend": "npm run dev --workspace backend",
     "build": "npm run build --workspace frontend",
+    "test": "npm run test --workspace backend",
     "lint": "npm run lint --workspace frontend",
     "start:backend": "npm start --workspace backend"
+  },
+  "optionalDependencies": {
+    "@esbuild/linux-x64": "0.25.11",
+    "@rollup/rollup-linux-x64-gnu": "4.52.5",
+    "@swc/core-linux-x64-gnu": "1.13.21",
+    "@tailwindcss/oxide-linux-x64-gnu": "4.1.16",
+    "lightningcss-linux-x64-gnu": "1.30.2"
   }
 }
