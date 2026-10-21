@@ -8,7 +8,7 @@
     },
     "scripts": {
         "dev": "vite",
-        "build": "tsc -b --noCheck && vite build",
+        "build": "tsc -b && vite build",
         "lint": "eslint .",
         "optimize": "vite optimize",
         "preview": "vite preview"
