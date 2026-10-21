@@ -16,7 +16,11 @@
     "dev:frontend": "npm run dev --workspace frontend",
     "dev:backend": "npm run dev --workspace backend",
     "build": "npm run build --workspace frontend",
+    "test": "node --import tsx --test test/*.test.mjs",
     "lint": "npm run lint --workspace frontend",
     "start:backend": "npm start --workspace backend"
+  },
+  "devDependencies": {
+    "tsx": "^4.20.6"
   }
 }
