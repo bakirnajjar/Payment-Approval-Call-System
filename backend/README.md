@@ -13,6 +13,8 @@ This backend server handles **real** Azure Communication Services phone calls wi
 
 ## 📋 Prerequisites
 
+Use **Node.js 24 LTS** (the repository root `.nvmrc`). The backend can be installed independently using its own lockfile.
+
 Before running this backend, you need:
 
 1. **Azure Communication Services Resource**
@@ -339,7 +341,7 @@ az webapp deployment source config-zip --name your-app-name --resource-group you
 ### Docker
 
 ```dockerfile
-FROM node:22-alpine
+FROM node:24-alpine
 WORKDIR /app
 COPY package*.json ./
 RUN npm install --production

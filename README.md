@@ -27,7 +27,7 @@ Banks need to verify high-value or suspicious transactions when customers don't 
 ## Technology Stack
 
 - **Frontend**: React 19 + TypeScript
-- **Backend**: Node.js 22+ (Express)
+- **Backend**: Node.js 24 LTS (Express)
 - **State Management**: React hooks + Spark KV storage (persistent)
 - **Icons**: Phosphor Icons
 - **Notifications**: Sonner
@@ -300,7 +300,7 @@ spark-template/
 
 ### Prerequisites
 
-- Node.js 22+
+- Node.js 24 LTS (use the root `.nvmrc` with nvm or another version manager)
 - Azure Communication Services resource with phone number
 - Azure Cognitive Services (Speech) resource
 
