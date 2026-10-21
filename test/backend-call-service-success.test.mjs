@@ -2,7 +2,7 @@ import assert from 'node:assert/strict'
 import { after, test } from 'node:test'
 import { readFile, unlink } from 'node:fs/promises'
 import { fileURLToPath } from 'node:url'
-import { CallAutomationClient } from '../backend/node_modules/@azure/communication-call-automation/dist/esm/index.js'
+import { CallAutomationClient } from '@azure/communication-call-automation'
 
 // Configure a syntactically valid offline ACS client; intercept its network boundary
 // before importing the service. No real credentials or endpoints are used.

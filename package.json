@@ -24,6 +24,8 @@
     "tsx": "^4.20.6"
   },
   "overrides": {
-    "shell-quote": "1.11.0"
+    "shell-quote": "1.11.0",
+    "adm-zip": "0.6.1",
+    "tmp": "0.2.7"
   }
 }
