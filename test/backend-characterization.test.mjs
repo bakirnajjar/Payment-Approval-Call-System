@@ -1,7 +1,11 @@
 import assert from 'node:assert/strict'
 import { after, test } from 'node:test'
 import { once } from 'node:events'
-import express from '../backend/node_modules/express/index.js'
+import { createRequire } from 'node:module'
+
+// Resolve from the backend so both hoisted workspace and standalone installs
+// intercept the same Express instance used by server.js.
+const express = createRequire(new URL('../backend/package.json', import.meta.url))('express')
 
 // Backend traces log entire requests/call objects. Keep TAP IPC small and never
 // emit test-only caller details into the CI log.
