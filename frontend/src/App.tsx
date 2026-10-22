@@ -25,7 +25,7 @@ function App() {
   useEffect(() => {
     const unsubscribers: Array<() => void> = []
 
-    safeTransactions.forEach(transaction => {
+    transactions?.forEach(transaction => {
       if (!['approved', 'rejected', 'escalated', 'timeout', 'no-answer', 'failed'].includes(transaction.status)) {
         const unsubscribe = callService.subscribe(transaction.id, (updatedTransaction) => {
           setTransactions(currentTransactions => 
@@ -41,7 +41,7 @@ function App() {
     return () => {
       unsubscribers.forEach(unsubscribe => unsubscribe())
     }
-  }, [safeTransactions.map(t => t.id).join(','), setTransactions])
+  }, [transactions, setTransactions])
 
   const handleFormSubmit = async (formData: TransactionFormData) => {
     setIsSubmitting(true)
