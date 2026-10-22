@@ -33,9 +33,12 @@ Before running this backend, you need:
 ### 1. Install Dependencies
 
 ```bash
-cd backend
-npm install
+# From the repository root; package-lock.json covers both workspaces.
+npm ci
 ```
+
+Run backend commands from the repository root with `npm run dev:backend` or
+`npm run start:backend`. The backend has no separate lockfile or install step.
 
 ### 2. Configure Environment
 
