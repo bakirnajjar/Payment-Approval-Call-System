@@ -68,13 +68,13 @@ describe('CallService API contracts', () => {
 
     await vi.advanceTimersByTimeAsync(2000)
     expect(fetchMock).toHaveBeenLastCalledWith(`http://localhost:3001/api/calls/${input.id}/status`)
-    expect(updates.at(-1)).toMatchObject({
+    expect(updates[updates.length - 1]).toMatchObject({
       status: 'connected', merchant: 'Backend Shop', currency: 'AED',
       customerName: 'Sam', dtmfInput: null, retryCount: 0, auditLog: updates[1].auditLog
     })
 
     await vi.advanceTimersByTimeAsync(2000)
-    expect(updates.at(-1)).toMatchObject({
+    expect(updates[updates.length - 1]).toMatchObject({
       status: 'approved', dtmfInput: '1', merchant: 'Backend Shop',
       auditLog: [{ status: 'approved', message: 'Approved by customer' }]
     })
@@ -115,7 +115,7 @@ describe('CallService API contracts', () => {
     await service.initiateCall(input)
 
     expect(updates.map(update => update.status)).toEqual(['initiating', 'failed'])
-    expect(updates.at(-1)).toMatchObject({
+    expect(updates[updates.length - 1]).toMatchObject({
       callEndedAt: '2026-02-03T10:00:00.000Z',
       auditLog: [
         input.auditLog[0],
