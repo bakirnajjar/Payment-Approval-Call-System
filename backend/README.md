@@ -353,6 +353,10 @@ CMD ["node", "server.js"]
 
 ## 📞 Testing
 
+Run `npm test` from the repository root (or `npm run test --workspace backend`)
+for isolated Node behavioral tests. They mock Azure calls, speech, and storage;
+no cloud credentials or running backend are required.
+
 ### Test Call Initiation
 
 ```bash

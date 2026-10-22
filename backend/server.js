@@ -8,7 +8,7 @@ import cors from 'cors'
 import bodyParser from 'body-parser'
 import dotenv from 'dotenv'
 import { fileURLToPath } from 'url'
-import { dirname, join } from 'path'
+import { dirname, join, resolve } from 'path'
 import { callService } from './services/call-service.js'
 import { webhookHandler } from './services/webhook-handler.js'
 import { existsSync, mkdirSync } from 'fs'
@@ -232,8 +232,11 @@ app.post('/api/calls/:callConnectionId/hangup', async (req, res) => {
   }
 })
 
-// Start server
-app.listen(PORT, () => {
+export { app }
+
+// Start server only when invoked directly, not when imported by tests.
+if (process.argv[1] && resolve(process.argv[1]) === __filename) {
+  app.listen(PORT, () => {
   console.log(`
 ╔══════════════════════════════════════════════════════════════════╗
 ║           Azure Communication Services Backend Server            ║
@@ -254,4 +257,5 @@ Endpoints:
 
 Ready for requests...
 `)
-})
+  })
+}
