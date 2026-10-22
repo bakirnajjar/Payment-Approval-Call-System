@@ -132,6 +132,7 @@ export class CallService {
         `Real call initiated via ACS. Call ID: ${result.callConnectionId}`,
         { callConnectionId: result.callConnectionId }
       )
+      current.callConnectionId = result.callConnectionId
       current.callStartedAt = new Date().toISOString()
       current = this.mergeTransactionData(this.currentTransactions.get(transaction.id), current)
       this.pushUpdate(current)
@@ -142,7 +143,7 @@ export class CallService {
     } catch (error) {
       console.error('Failed to initiate call:', error)
       const failed = addAuditLogEntry(
-        transaction,
+        this.currentTransactions.get(transaction.id) ?? transaction,
         'failed',
         `Failed to initiate call: ${error instanceof Error ? error.message : 'Unknown error'}`
       )

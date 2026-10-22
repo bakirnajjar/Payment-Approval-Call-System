@@ -17,7 +17,7 @@
     "dev:backend": "npm run dev --workspace backend",
     "build": "npm run build --workspace frontend",
     "lint": "npm run lint --workspace frontend",
-    "test": "node scripts/test-backend-syntax.js && npm run test --workspace backend",
+    "test": "node scripts/test-backend-syntax.js && npm run test --workspace backend && npm run test --workspace frontend",
     "start:backend": "npm start --workspace backend"
   }
 }
